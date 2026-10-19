@@ -1,0 +1,101 @@
+# Home Base settings
+# Edit this file to add, remove or change apps. Refresh the page to see changes (no restart needed).
+#
+# Each app can have:
+#   name:         what's shown on the tile (required)
+#   description:  one short line
+#   port:         the app's port on this server; the link and the up/down check use it
+#   path:         optional, added after the port (e.g. /admin)
+#   scheme:       http (default) or https
+#   url:          use a full web address instead of a port (for websites outside the server)
+#   planned: true  shows it greyed out under "Coming next" until you install it
+#   icon:         jellyfin            -> icon from the free library (names at dashboardicons.com)
+#                 mail.svg            -> your own image, placed in the icons/ folder
+#                 https://...png      -> any image on the web
+#                 (no icon, or it can't load = the initials are shown instead)
+#   counts:       live numbers on the tile, read from the app's JSON at port + path
+#                   field_in_the_json: Label on the tile
+
+title: Home Base
+owner: Juan
+
+# World clocks, top right. Zone names: en.wikipedia.org/wiki/List_of_tz_database_time_zones
+clocks:
+  - city: Amsterdam
+    zone: Europe/Amsterdam
+
+groups:
+  - name: Music
+    apps:
+      - name: You Link to MP3
+        description: Turn YouTube links and playlists into songs for your library
+        port: 8080
+        icon: cassette.svg
+      - name: Navidrome
+        description: Your music library and player
+        port: 4533
+        icon: navidrome
+
+  - name: Media
+    apps:
+      - name: Jellyfin
+        description: Movies, shows and videos, streamed like Netflix
+        port: 8096
+        icon: jellyfin
+      - name: File Browser
+        description: Upload videos and music from any device
+        port: 8085
+        icon: filebrowser
+      - name: qBittorrent
+        description: Paste a torrent or magnet link to download through the VPN
+        port: 8070
+        icon: qbittorrent
+
+  - name: Admin
+    apps:
+      - name: Important mail
+        description: New important emails today
+        port: 8090
+        path: /stats
+        icon: mail.svg
+        counts:
+          outlook_today: Outlook
+          gmail_today: Gmail
+          today: Total today
+      - name: Portainer
+        description: See and manage your Docker containers
+        port: 9443
+        scheme: https
+        icon: portainer
+      - name: Tailscale
+        description: Devices that can reach this server from outside
+        url: https://login.tailscale.com/admin/machines
+        icon: tailscale
+      - name: Pi-hole
+        description: Blocks ads for every device at home
+        port: 8053
+        path: /admin
+        icon: pi-hole
+
+  - name: Coming next
+    apps:
+      - name: Immich
+        description: Phone photo backup, like Google Photos
+        port: 2283
+        planned: true
+        icon: immich
+      - name: Uptime Kuma
+        description: Alerts you when an app goes down
+        port: 3001
+        planned: true
+        icon: uptime-kuma
+      - name: Vaultwarden
+        description: Your own password manager
+        port: 8222
+        planned: true
+        icon: vaultwarden
+      - name: Paperless-ngx
+        description: Scanned documents you can search
+        port: 8010
+        planned: true
+        icon: paperless-ngx

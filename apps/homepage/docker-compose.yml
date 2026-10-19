@@ -1,0 +1,13 @@
+services:
+  homepage:
+    build: .
+    container_name: homepage
+    ports:
+      - "80:8000"                    # open http://SERVER-IP with no port number
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # lets the page check your other apps' ports
+    volumes:
+      - ./apps.yaml:/config/apps.yaml:ro      # your app list, edit it any time
+      - ./icons:/config/icons:ro              # your own icon images (cassette.svg, mail.svg...)
+      - /:/host:ro                            # read-only, only used to show free disk space
+    restart: unless-stopped

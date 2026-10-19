@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>You Link to MP3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Permanent+Marker&family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brick: #7a3324;
+      --mortar: #3b1a13;
+      --slab: #141210;
+      --slab-2: #1f1b17;
+      --ink: #f3ead7;
+      --muted: #b8ab93;
+      --line: #3a332b;
+      --gold: #f2c230;
+      --gold-deep: #b8860b;
+      --red: #e0352b;
+      --green: #2f9e57;
+      --shell: #0c0b0a;
+      --shell-edge: #2c2722;
+      --label: #f3ead7;
+      --tape: #5a3a24;
+      --error: #ff7a6b;
+    }
+    * { box-sizing: border-box; }
+    html { font-family: "Archivo", system-ui, sans-serif; }
+    body {
+      margin: 0; min-height: 100vh; padding: 32px 16px;
+      display: grid; place-items: center;
+      color: var(--ink); font-size: 16px; line-height: 1.5;
+      /* brick wall */
+      background-color: var(--brick);
+      background-image:
+        linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.55)),
+        linear-gradient(var(--mortar) 0 4px, transparent 4px),
+        linear-gradient(90deg, var(--mortar) 0 4px, transparent 4px),
+        linear-gradient(90deg, var(--mortar) 0 4px, transparent 4px);
+      background-size: 100% 100%, 100% 40px, 120px 80px, 120px 80px;
+      background-position: 0 0, 0 0, 0 0, 60px 40px;
+      background-attachment: fixed;
+    }
+    /* hide the vertical mortar of the offset row on the even rows only */
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse at 50% 35%, transparent 30%, rgba(0,0,0,.55) 100%);
+    }
+
+    .deck {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 540px;
+      background: linear-gradient(180deg, var(--slab-2), var(--slab));
+      border: 3px solid var(--gold);
+      border-radius: 14px;
+      padding: 28px 28px 24px;
+      box-shadow: 10px 10px 0 #000;
+    }
+
+    header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    h1 {
+      margin: 0; font-family: "Bungee", "Archivo", sans-serif; font-weight: 400;
+      font-size: 2.35rem; line-height: .95; color: var(--gold);
+      text-shadow: 3px 3px 0 var(--red), 6px 6px 0 #000;
+    }
+    h1 span { display: block; color: var(--ink); }
+    .tagline {
+      margin: 14px 0 0; font-family: "Permanent Marker", cursive;
+      font-size: 1.25rem; line-height: 1.2; color: var(--ink);
+      transform: rotate(-2deg); transform-origin: left;
+    }
+    .led { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: .875rem; padding-top: 6px; white-space: nowrap; }
+    .led::before {
+      content: ""; width: 10px; height: 10px; border-radius: 50%;
+      background: var(--line); transition: background .2s, box-shadow .2s;
+    }
+    .deck[data-state="running"] .led::before { background: var(--red); box-shadow: 0 0 10px var(--red); }
+    .deck[data-state="done"] .led::before { background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .deck[data-state="error"] .led::before { background: var(--error); }
+
+    /* Cassette */
+    .cassette { display: block; width: 100%; height: auto; margin: 0 auto; }
+    .reel-spin { transform-box: fill-box; transform-origin: center; }
+    .deck[data-state="running"] .reel-spin { animation: spin 1.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tape { transition: r .4s ease; }
+    @media (prefers-reduced-motion: reduce) {
+      .deck[data-state="running"] .reel-spin { animation: none; }
+      .tape { transition: none; }
+    }
+
+    .readout {
+      display: flex; justify-content: space-between; gap: 12px;
+      font-size: .9375rem; color: var(--muted);
+      margin: 10px 2px 0; font-variant-numeric: tabular-nums;
+    }
+    .readout.idle { display: none; }
+    .readout .err { color: var(--error); }
+
+    form { margin-top: 20px; }
+    label.field, legend { display: block; font-weight: 700; margin-bottom: 6px; padding: 0; color: var(--ink); }
+    input[type=url] {
+      width: 100%; padding: 13px 14px; font: inherit;
+      border: 2px solid var(--line); border-radius: 8px;
+      background: #0a0908; color: var(--ink);
+    }
+    input[type=url]::placeholder { color: var(--muted); opacity: .75; }
+
+    .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-top: 16px; }
+    fieldset { border: 0; padding: 0; margin: 0; flex: 1 1 240px; }
+    .switches {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      background: #0a0908; border: 2px solid var(--line); border-radius: 8px; padding: 4px; gap: 4px;
+    }
+    .switches input { position: absolute; opacity: 0; pointer-events: none; }
+    .switches label {
+      text-align: center; padding: 8px 0; border-radius: 5px; cursor: pointer;
+      font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted);
+    }
+    .switches input:checked + label { background: var(--ink); color: var(--slab); }
+    .switches input:focus-visible + label { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+    .btn {
+      flex: 0 0 auto; padding: 12px 22px; border: 2px solid #000; border-radius: 8px;
+      font-family: "Bungee", "Archivo", sans-serif; font-size: 1rem;
+      background: var(--gold); color: #000; cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow: 4px 4px 0 var(--red);
+      transition: transform .08s, box-shadow .08s;
+    }
+    .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--red); }
+    .btn:disabled { opacity: .55; cursor: progress; }
+    :is(.btn, input[type=url]):focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+    .mode { margin-top: 14px; }
+    .mode legend { font-weight: 600; color: var(--muted); font-size: .9375rem; }
+    .switches.two { grid-template-columns: 1fr 1fr; }
+    .note { margin: 8px 2px 0; font-size: .875rem; color: var(--muted); }
+    [hidden] { display: none !important; }
+
+    .skipped { margin-top: 12px; font-size: .875rem; color: var(--muted); }
+    .skipped summary { cursor: pointer; color: var(--gold); }
+    .skipped ul { margin: 8px 0 0; padding-left: 18px; }
+    .skipped li { margin-bottom: 4px; }
+
+    .result { margin-top: 18px; }
+    .result:empty { display: none; }
+    .result .btn { width: 100%; background: var(--green); color: #fff; box-shadow: 4px 4px 0 #000; }
+    .result .alt { display: block; margin-top: 12px; text-align: center; color: var(--muted); font-size: .9375rem; }
+    .result .alt a, .result .alt button {
+      color: var(--gold); background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-decoration: underline;
+    }
+    .result .saved { margin: 0; font-weight: 700; color: var(--ink); }
+    .result .saved + .alt { margin-top: 6px; }
+
+    footer { margin-top: 22px; font-size: .8125rem; color: var(--muted); }
+
+    @media (max-width: 420px) {
+      .deck { padding: 22px 18px 18px; box-shadow: 6px 6px 0 #000; }
+      h1 { font-size: 1.9rem; }
+      .row .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" id="deck" data-state="idle"
+        data-library="{{ 'yes' if library else 'no' }}" data-navidrome="{{ navidrome_url }}">
+    <header>
+      <div>
+        <h1>You Link <span>to MP3</span></h1>
+        <p class="tagline">How are we cooking today?</p>
+      </div>
+      <span class="led" id="led">Ready</span>
+    </header>
+
+    <svg class="cassette" viewBox="0 0 320 196" role="img" aria-labelledby="cassette-title">
+      <title id="cassette-title">Cassette showing conversion progress</title>
+      <defs>
+        <clipPath id="window"><rect x="78" y="100" width="164" height="54" rx="27"/></clipPath>
+      </defs>
+      <!-- shell -->
+      <rect x="6" y="6" width="308" height="184" rx="14" fill="var(--shell)" stroke="var(--gold-deep)" stroke-width="2"/>
+      <circle cx="22" cy="22" r="4" fill="var(--gold-deep)"/>
+      <circle cx="298" cy="22" r="4" fill="var(--gold-deep)"/>
+      <circle cx="22" cy="174" r="4" fill="var(--gold-deep)"/>
+      <circle cx="298" cy="174" r="4" fill="var(--gold-deep)"/>
+      <!-- label: red / gold / green bands -->
+      <rect x="30" y="22" width="260" height="62" rx="5" fill="var(--label)"/>
+      <rect x="30" y="64" width="260" height="6" fill="var(--red)"/>
+      <rect x="30" y="70" width="260" height="6" fill="var(--gold)"/>
+      <rect x="30" y="76" width="260" height="6" fill="var(--green)"/>
+      <text id="tape-title" x="42" y="49" font-family="Archivo, sans-serif" font-size="15" font-weight="800" fill="#141210"></text>
+      <text x="278" y="49" text-anchor="end" font-family="Bungee, sans-serif" font-size="14" fill="#e0352b">A</text>
+      <!-- window -->
+      <rect x="78" y="100" width="164" height="54" rx="27" fill="#050404"/>
+      <g clip-path="url(#window)">
+        <circle id="tape-left" class="tape" cx="120" cy="127" r="38" fill="var(--tape)"/>
+        <circle id="tape-right" class="tape" cx="200" cy="127" r="13" fill="var(--tape)"/>
+      </g>
+      <!-- hubs -->
+      <g class="reel-spin">
+        <circle cx="120" cy="127" r="11" fill="var(--label)"/>
+        <path d="M120 119v5M120 130v5M112 127h5M123 127h5" stroke="var(--shell)" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <g class="reel-spin">
+        <circle cx="200" cy="127" r="11" fill="var(--label)"/>
+        <path d="M200 119v5M200 130v5M192 127h5M203 127h5" stroke="var(--shell)" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <!-- lower bridge -->
+      <path d="M70 190 L84 166 H236 L250 190 Z" fill="var(--shell-edge)"/>
+      <circle cx="110" cy="178" r="4" fill="var(--shell)"/>
+      <circle cx="210" cy="178" r="4" fill="var(--shell)"/>
+    </svg>
+
+    <div class="readout idle" id="readout" role="status" aria-live="polite">
+      <span id="msg"></span>
+      <span id="pct"></span>
+    </div>
+
+    <form id="form">
+      <label class="field" for="url">YouTube link or playlist</label>
+      <input type="url" id="url" placeholder="https://www.youtube.com/watch?v=…" required autocomplete="off">
+
+      <fieldset class="mode" id="mode" hidden>
+        <legend>This link is a song inside a playlist</legend>
+        <div class="switches two">
+          <input type="radio" name="mode" id="mode-single" value="single" checked>
+          <label for="mode-single">Just this song</label>
+          <input type="radio" name="mode" id="mode-playlist" value="playlist">
+          <label for="mode-playlist">Whole playlist</label>
+        </div>
+      </fieldset>
+      <p class="note" id="mode-note" hidden>
+        {% if library %}Every song goes straight into your library, as one album (up to {{ max_playlist }} songs).
+        {% else %}Playlists need the music library, which isn't set up on this server.{% endif %}
+      </p>
+
+      <div class="row">
+        <fieldset>
+          <legend>Quality (kbps)</legend>
+          <div class="switches">
+            {% for b in ["128","192","256","320"] %}
+              <input type="radio" name="bitrate" id="br{{b}}" value="{{b}}" {% if b == default_bitrate %}checked{% endif %}>
+              <label for="br{{b}}">{{b}}</label>
+            {% endfor %}
+          </div>
+        </fieldset>
+        <button class="btn" id="btn" type="submit">Convert to MP3</button>
+      </div>
+    </form>
+
+    <div class="result" id="result"></div>
+
+    <footer>Songs you add to the library stay there. Other files are cleared after an hour.</footer>
+  </main>
+
+<script>
+const $ = id => document.getElementById(id);
+const deck = $("deck");
+const R_MIN = 13, R_MAX = 38;
+const labels = { queued: "Waiting to start", downloading: "Downloading", converting: "Converting to MP3" };
+
+let convertStart = null;
+
+function fmtTime(s) {
+  s = Math.max(0, Math.round(s));
+  if (s < 60) return `${s} s`;
+  const m = Math.floor(s / 60), r = s % 60;
+  if (m < 60) return r ? `${m} min ${r} s` : `${m} min`;
+  return `${Math.floor(m / 60)} h ${m % 60} min`;
+}
+
+function setTape(pct) {
+  const p = Math.max(0, Math.min(100, pct)) / 100;
+  $("tape-left").setAttribute("r", R_MIN + (R_MAX - R_MIN) * (1 - p));
+  $("tape-right").setAttribute("r", R_MIN + (R_MAX - R_MIN) * p);
+}
+
+function setTitle(text) {
+  const t = text.length > 30 ? text.slice(0, 29) + "…" : text;
+  $("tape-title").textContent = t;
+}
+
+function setState(state, led) {
+  deck.dataset.state = state;
+  $("led").textContent = led;
+  $("readout").classList.toggle("idle", state === "idle");
+}
+
+function linkKind(value) {
+  let u;
+  try { u = new URL(/^https?:/i.test(value) ? value : "https://" + value); } catch { return "none"; }
+  const list = u.searchParams.get("list");
+  if (u.pathname.startsWith("/playlist") && list) return "playlist";
+  if (list) return "both";
+  return "single";
+}
+
+function currentMode() {
+  const kind = linkKind($("url").value.trim());
+  if (kind === "playlist") return "playlist";
+  if (kind === "both") return document.querySelector('input[name="mode"]:checked').value;
+  return "single";
+}
+
+function updateModeUI() {
+  const kind = linkKind($("url").value.trim());
+  $("mode").hidden = kind !== "both";
+  $("mode-note").hidden = currentMode() !== "playlist";
+}
+$("url").addEventListener("input", updateModeUI);
+document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener("change", updateModeUI));
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("btn").disabled = true;
+  $("result").innerHTML = "";
+  $("msg").className = "";
+  $("msg").textContent = "Starting";
+  $("pct").textContent = "";
+  convertStart = null;
+  setTape(0);
+  const mode = currentMode();
+  setTitle(mode === "playlist" ? "Reading playlist…" : "Reading video…");
+  setState("running", "Working");
+
+  try {
+    const bitrate = document.querySelector('input[name="bitrate"]:checked').value;
+    const res = await fetch("/api/convert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: $("url").value, bitrate, mode })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "The server didn't accept that link.");
+    poll(data.job_id);
+  } catch (err) { fail(err.message); }
+});
+
+async function poll(jobId) {
+  try {
+    const res = await fetch(`/api/status/${jobId}`);
+    const job = await res.json();
+    if (!res.ok) throw new Error(job.error || "Couldn't check the conversion status.");
+
+    if (job.kind === "playlist") {
+      if (job.status === "error") throw new Error(job.error);
+      if (job.status === "done") { showPlaylistDone(job); return; }
+      showPlaylistProgress(job);
+      setTimeout(() => poll(jobId), 1000);
+      return;
+    }
+
+    if (job.status === "done") {
+      setTape(100);
+      setTitle(job.title || "Your MP3");
+      setState("done", "Done");
+      $("pct").textContent = "100%";
+      $("btn").disabled = false;
+      if (job.saved_as) { showSaved(job.saved_as); return; }
+      $("msg").textContent = "Your MP3 is ready.";
+      showDoneChoices(jobId);
+      return;
+    }
+    if (job.status === "error") throw new Error(job.error);
+
+    const pct = job.progress || 0;
+    setTape(job.status === "converting" ? 100 : pct);
+    $("msg").textContent = labels[job.status] || job.status;
+    if (job.status === "downloading") {
+      const left = job.eta != null && pct > 0 && pct < 100 ? ` · about ${fmtTime(job.eta)} left` : "";
+      $("pct").textContent = `${Math.round(pct)}%${left}`;
+    } else if (job.status === "converting") {
+      convertStart ??= Date.now();
+      $("pct").textContent = fmtTime(Math.round((Date.now() - convertStart) / 1000));
+    } else {
+      $("pct").textContent = "";
+    }
+    setTimeout(() => poll(jobId), 1000);
+  } catch (err) { fail(err.message); }
+}
+
+function showPlaylistProgress(job) {
+  setTape(job.overall || 0);
+  if (!job.total) { $("msg").textContent = "Reading playlist"; $("pct").textContent = ""; return; }
+  setTitle(job.current_title || job.playlist_title || "Playlist");
+  const step = job.status === "converting" ? "converting" : `${Math.round(job.progress || 0)}%`;
+  $("msg").textContent = `Song ${job.index} of ${job.total} · ${step}`;
+  $("pct").textContent = job.overall_eta != null ? `about ${fmtTime(job.overall_eta)} left` : "";
+}
+
+function showPlaylistDone(job) {
+  setTape(100);
+  setTitle(job.playlist_title || "Playlist");
+  setState("done", "Done");
+  $("btn").disabled = false;
+  $("pct").textContent = "";
+  const skipped = job.skipped || [];
+  $("msg").className = "";
+  $("msg").textContent = `Added ${job.added} of ${job.total} songs to your library.`;
+
+  const box = $("result");
+  box.innerHTML = "";
+  const p = document.createElement("p");
+  p.className = "saved"; p.textContent = job.saved_as;
+  const alt = document.createElement("span");
+  alt.className = "alt";
+  const open = document.createElement("a");
+  open.href = libraryUrl(); open.target = "_blank"; open.rel = "noopener";
+  open.textContent = "Open your music library";
+  alt.append(open);
+  box.append(p, alt);
+
+  if (skipped.length) {
+    const d = document.createElement("details");
+    d.className = "skipped";
+    const s = document.createElement("summary");
+    s.textContent = `${skipped.length} skipped`;
+    const ul = document.createElement("ul");
+    for (const item of skipped) {
+      const li = document.createElement("li");
+      li.textContent = `${item.title}: ${item.reason}`;
+      ul.appendChild(li);
+    }
+    d.append(s, ul);
+    box.appendChild(d);
+  }
+}
+
+function libraryUrl() {
+  return deck.dataset.navidrome || `${location.protocol}//${location.hostname}:4533`;
+}
+
+function showDoneChoices(jobId) {
+  const box = $("result");
+  box.innerHTML = "";
+  const download = document.createElement("a");
+  download.href = `/api/download/${jobId}`;
+  download.textContent = "Download MP3";
+
+  if (deck.dataset.library !== "yes") {
+    download.className = "btn";
+    box.appendChild(download);
+    return;
+  }
+
+  const add = document.createElement("button");
+  add.className = "btn"; add.type = "button"; add.textContent = "Add to library";
+  add.addEventListener("click", async () => {
+    add.disabled = true; add.textContent = "Adding…";
+    try {
+      const res = await fetch(`/api/library/${jobId}`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Couldn't add it to the library.");
+      showSaved(data.saved_as);
+    } catch (err) {
+      add.disabled = false; add.textContent = "Add to library";
+      $("msg").className = "err"; $("msg").textContent = err.message;
+    }
+  });
+
+  const alt = document.createElement("span");
+  alt.className = "alt";
+  alt.append("or ", download, " to this device");
+  box.append(add, alt);
+}
+
+function showSaved(name) {
+  const box = $("result");
+  box.innerHTML = "";
+  $("msg").className = "";
+  $("msg").textContent = "Added to your library.";
+  const p = document.createElement("p");
+  p.className = "saved"; p.textContent = name;
+  const alt = document.createElement("span");
+  alt.className = "alt";
+  const open = document.createElement("a");
+  open.href = libraryUrl(); open.target = "_blank"; open.rel = "noopener";
+  open.textContent = "Open your music library";
+  alt.append(open);
+  box.append(p, alt);
+}
+
+function fail(message) {
+  setState("error", "Error");
+  setTitle("Conversion stopped");
+  $("msg").className = "err";
+  $("msg").textContent = message;
+  $("pct").textContent = "";
+  $("btn").disabled = false;
+}
+</script>
+</body>
+</html>

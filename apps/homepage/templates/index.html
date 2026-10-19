@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ cfg.title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* Off-white gray printed with fine halftone dots; black, concrete grays and one loud orange on top. */
+    :root {
+      --black: #161514;
+      --charcoal: #1f1e1c;
+      --slate: #2b2a28;
+      --concrete: #6e6c67;
+      --fog: #a9a59d;
+      --bone: #ece9e2;
+      --orange: #ee7623;
+      --ember: #d9442b;
+      --paper: #dcd9d3;
+      --ink-text: #2a2927;
+      --muted-text: #55534e;
+      --orange-text: #b5520e;
+      --display: "Unbounded", "Arial Black", sans-serif;
+      --text: "Instrument Sans", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { font-family: var(--text); }
+    body {
+      margin: 0; min-height: 100vh; padding: 36px 16px 56px;
+      color: var(--bone); font-size: 16px; line-height: 1.5;
+      background-color: var(--paper);
+      background-image: radial-gradient(circle, rgba(0,0,0,.16) 1.1px, transparent 1.5px);
+      background-size: 6px 6px;
+    }
+    .wrap { max-width: 1040px; margin: 0 auto; }
+
+    /* Header: title + greeting on the left, world clocks on the right */
+    header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 24px; }
+    h1 {
+      margin: 0; font-family: var(--display); font-weight: 800;
+      font-size: clamp(2.4rem, 7.5vw, 4.6rem); line-height: .95; letter-spacing: -.02em;
+      color: var(--orange);
+    }
+    .greeting { margin: 12px 0 0; font-size: 1.125rem; color: var(--ink-text); }
+    .clocks { display: flex; gap: 28px; text-align: right; }
+    .clock time { display: block; color: var(--ink-text); font-family: var(--display); font-weight: 500; font-size: 2rem; line-height: 1; font-variant-numeric: tabular-nums; }
+    .clock span { display: block; margin-top: 6px; font-size: .8125rem; color: var(--muted-text); }
+    .clock em { font-style: normal; color: var(--orange-text); }
+
+    /* Server meters: one quiet strip */
+    .meters {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 14px 28px; align-items: end;
+      margin: 28px 0 8px; padding: 14px 18px; background: var(--charcoal); border-radius: 6px;
+    }
+    .meter label { display: flex; justify-content: space-between; gap: 10px; white-space: nowrap; font-size: .8125rem; color: var(--fog); font-variant-numeric: tabular-nums; }
+    .meter label b { color: var(--bone); font-weight: 600; }
+    .bar { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; margin-top: 7px; }
+    .bar i { height: 6px; border-radius: 1px; background: var(--slate); }
+    .bar i.on { background: var(--fog); }
+    .bar i.on.warn { background: var(--orange); }
+    .bar i.on.hot { background: var(--ember); }
+    .uptime { font-size: .8125rem; color: var(--fog); text-align: right; white-space: nowrap; }
+    .uptime b { display: block; color: var(--bone); font-family: var(--display); font-weight: 500; font-size: 1rem; }
+
+    .config-error { background: var(--charcoal); border-left: 4px solid var(--ember); color: var(--bone); padding: 12px 16px; margin: 16px 0; }
+
+    /* Groups */
+    section { margin-top: 36px; }
+    h2 { margin: 0 0 14px; font-family: var(--display); font-weight: 500; font-size: 1rem; color: var(--ink-text); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+
+    /* Tiles: the left edge lights up orange when the app is running */
+    .tile {
+      display: grid; grid-template-columns: 48px 1fr; gap: 14px; align-items: start;
+      background: var(--slate); border-left: 4px solid var(--concrete); border-radius: 0 6px 6px 0;
+      padding: 14px 16px; color: inherit; text-decoration: none;
+    }
+    .tile[data-s="up"] { border-left-color: var(--orange); }
+    .tile[data-s="down"] { border-left-color: var(--ember); }
+    a.tile:hover { background: #343330; }
+    a.tile:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+
+    /* Icon square; initials show if there's no icon or it can't load */
+    .plate { width: 48px; height: 48px; border-radius: 6px; display: grid; place-items: center; background: var(--black); }
+    .plate img { width: 30px; height: 30px; object-fit: contain; }
+    .plate b { display: none; font-family: var(--display); font-weight: 800; font-size: .95rem; color: var(--orange); }
+    .plate.noimg img { display: none; }
+    .plate.noimg b { display: block; }
+
+    .tile h3 { margin: 1px 0 0; font-family: var(--display); font-weight: 500; font-size: 1rem; line-height: 1.25; }
+    .tile p { margin: 3px 0 8px; color: var(--fog); font-size: .875rem; line-height: 1.4; }
+    .state { display: inline-flex; align-items: center; gap: 7px; font-size: .8125rem; color: var(--fog); }
+    .state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--concrete); }
+    .state[data-s="up"] { color: var(--bone); }
+    .state[data-s="up"]::before { background: var(--orange); }
+    .state[data-s="down"] { color: #f08a6e; }
+    .state[data-s="down"]::before { background: var(--ember); }
+
+    /* Live numbers on a tile (apps.yaml "counts") */
+    .counts { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .count { display: inline-flex; align-items: baseline; gap: 6px; padding: 2px 9px; border-radius: 4px; background: var(--black); font-size: .8125rem; color: var(--fog); }
+    .count b { font-family: var(--display); font-weight: 500; font-size: .95rem; color: var(--bone); font-variant-numeric: tabular-nums; }
+    .count.hit b { color: var(--orange); }
+
+    .tile.planned { background: rgba(43,42,40,.07); border: 1px dashed var(--concrete); border-left: 4px dashed var(--concrete); }
+    .tile.planned .plate { opacity: .5; filter: grayscale(1); }
+    .tile.planned h3 { color: var(--ink-text); }
+    .tile.planned p, .tile.planned .state { color: var(--muted-text); }
+
+    footer { margin-top: 44px; color: var(--muted-text); font-size: .8125rem; }
+    footer code { color: var(--ink-text); }
+
+    @media (max-width: 640px) {
+      body { padding-top: 26px; }
+      .clocks { text-align: left; gap: 20px; }
+      .clock time { font-size: 1.5rem; }
+      .meters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .meter label { flex-direction: column; gap: 0; }
+      .uptime { grid-column: 1 / -1; text-align: left; }
+      .uptime b { display: inline; margin-left: 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>{{ cfg.title }}</h1>
+        <p class="greeting" id="greeting" data-owner="{{ cfg.owner }}">Welcome back{% if cfg.owner %}, {{ cfg.owner }}{% endif %}</p>
+      </div>
+      {% if cfg.clocks %}
+      <div class="clocks" aria-label="World clocks">
+        {% for c in cfg.clocks %}
+        <div class="clock" data-zone="{{ c.zone }}"><time>--:--</time><span>{{ c.city }} · <abbr class="tz"></abbr><em class="day"></em></span></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </header>
+
+    <div class="meters" aria-label="Server status">
+      <div class="meter" id="m-cpu"><label>CPU <b>–</b></label><div class="bar"></div></div>
+      <div class="meter" id="m-ram"><label>Memory <b>–</b></label><div class="bar"></div></div>
+      <div class="meter" id="m-disk"><label>Disk <b>–</b></label><div class="bar"></div></div>
+      <div class="uptime">Up for <b id="uptime">–</b></div>
+    </div>
+
+    {% if cfg.error %}<div class="config-error">{{ cfg.error }}</div>{% endif %}
+
+    {% for g in cfg.groups %}
+    <section>
+      <h2>{{ g.name }}</h2>
+      <div class="grid">
+        {% for a in g.apps %}
+          {% set words = a.name.replace('-', ' ').split() %}
+          {% set mono = (words[0][0] ~ (words[1][0] if words|length > 1 else words[0][1:2])) | upper %}
+          {% set plate %}<span class="plate{% if not a.icon %} noimg{% endif %}" aria-hidden="true">{% if a.icon %}<img src="{{ a.icon }}" alt="" loading="lazy" onerror="this.parentNode.classList.add('noimg')">{% endif %}<b>{{ mono }}</b></span>{% endset %}
+          {% if a.planned %}
+          <div class="tile planned">
+            {{ plate }}
+            <div><h3>{{ a.name }}</h3><p>{{ a.description }}</p><span class="state">Not installed yet</span></div>
+          </div>
+          {% else %}
+          <a class="tile" target="_blank" rel="noopener" {% if a.port and not a.url %}data-tile-id="{{ a.id }}"{% endif %}
+             {% if a.url %}href="{{ a.url }}"{% else %}href="#" data-port="{{ a.port }}" data-scheme="{{ a.scheme }}" data-path="{{ a.path }}"{% endif %}>
+            {{ plate }}
+            <div>
+              <h3>{{ a.name }}</h3>
+              <p>{{ a.description }}</p>
+              {% if a.counts %}
+              <div class="counts" data-counts-id="{{ a.id }}">
+                {% for label in a.counts.values() %}<span class="count" data-label="{{ label }}"><b>–</b>{{ label }}</span>{% endfor %}
+              </div>
+              {% endif %}
+              {% if a.url %}<span class="state">Opens a website</span>
+              {% elif a.port %}<span class="state" data-id="{{ a.id }}">Checking…</span>{% endif %}
+            </div>
+          </a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+
+    <footer>Add or change apps and clocks in <code>apps.yaml</code>, then refresh this page.</footer>
+  </div>
+
+<script>
+// Links use whatever address you opened this page with, so they work at home and over Tailscale.
+document.querySelectorAll("a.tile[data-port]").forEach(a => {
+  a.href = `${a.dataset.scheme}://${location.hostname}:${a.dataset.port}${a.dataset.path}`;
+});
+
+const owner = document.getElementById("greeting").dataset.owner;
+const who = owner ? `, ${owner}` : "";
+const h = new Date().getHours();
+const part = h < 5 ? "Up late" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+document.getElementById("greeting").textContent = `${part}${who}`;
+
+// World clocks: time, zone abbreviation (CET/CEST switch by themselves), and a note when it's a different day there.
+function zoneName(zone, date) {
+  for (const locale of ["en-GB", "en-US"]) {
+    const n = new Intl.DateTimeFormat(locale, { timeZone: zone, timeZoneName: "short" })
+      .formatToParts(date).find(p => p.type === "timeZoneName")?.value;
+    if (n && !n.startsWith("GMT") && !n.startsWith("UTC")) return n;
+  }
+  return new Intl.DateTimeFormat("en-GB", { timeZone: zone, timeZoneName: "shortOffset" })
+    .formatToParts(date).find(p => p.type === "timeZoneName")?.value || "";
+}
+function dayKey(date, zone) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+}
+function refreshClocks() {
+  const now = new Date();
+  const here = dayKey(now, undefined);
+  document.querySelectorAll(".clock").forEach(c => {
+    const zone = c.dataset.zone;
+    try {
+      c.querySelector("time").textContent = new Intl.DateTimeFormat("en-GB",
+        { timeZone: zone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(now);
+      c.querySelector(".tz").textContent = zoneName(zone, now);
+      const there = dayKey(now, zone);
+      c.querySelector(".day").textContent = there > here ? " · tomorrow" : there < here ? " · yesterday" : "";
+    } catch {
+      c.querySelector("time").textContent = "??";
+      c.querySelector(".tz").textContent = `unknown zone "${zone}"`;
+    }
+  });
+}
+
+function meter(id, pct, text) {
+  const el = document.getElementById(id);
+  el.querySelector("b").textContent = text;
+  const bar = el.querySelector(".bar");
+  if (!bar.children.length) for (let i = 0; i < 10; i++) bar.appendChild(document.createElement("i"));
+  const lit = Math.round(pct / 10);
+  [...bar.children].forEach((seg, i) => {
+    seg.className = i < lit ? "on" + (i >= 8 ? " hot" : i >= 6 ? " warn" : "") : "";
+  });
+}
+
+function fmtUptime(s) {
+  const d = Math.floor(s / 86400), hr = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  return d ? `${d} d ${hr} h` : hr ? `${hr} h ${m} min` : `${m} min`;
+}
+
+async function refreshStats() {
+  try {
+    const s = await (await fetch("/api/stats")).json();
+    meter("m-cpu", s.cpu, `${Math.round(s.cpu)}%`);
+    meter("m-ram", s.ram, `${s.ram_used_gb} / ${s.ram_total_gb} GB`);
+    meter("m-disk", s.disk, `${s.disk_free_gb} GB free`);
+    document.getElementById("uptime").textContent = fmtUptime(s.uptime_s);
+  } catch { /* keep last values */ }
+}
+
+async function refreshStatus() {
+  try {
+    const st = await (await fetch("/api/status")).json();
+    document.querySelectorAll(".state[data-id]").forEach(el => {
+      const s = st[el.dataset.id];
+      el.dataset.s = s || "";
+      el.textContent = s === "up" ? "Running" : s === "down" ? "Not responding" : "Unknown";
+    });
+    document.querySelectorAll("[data-tile-id]").forEach(t => { t.dataset.s = st[t.dataset.tileId] || ""; });
+  } catch { /* keep last values */ }
+}
+
+async function refreshCounts() {
+  if (!document.querySelector("[data-counts-id]")) return;
+  try {
+    const all = await (await fetch("/api/counts")).json();
+    document.querySelectorAll("[data-counts-id]").forEach(box => {
+      const values = all[box.dataset.countsId];  // null when the app isn't answering
+      box.querySelectorAll(".count").forEach(chip => {
+        const v = values ? values[chip.dataset.label] : null;
+        chip.querySelector("b").textContent = (v ?? "–");
+        chip.classList.toggle("hit", typeof v === "number" && v > 0);
+      });
+    });
+  } catch { /* keep last values */ }
+}
+
+document.querySelectorAll(".bar").forEach(bar => {
+  for (let i = 0; i < 10; i++) bar.appendChild(document.createElement("i"));
+});
+
+refreshClocks(); refreshStats(); refreshStatus(); refreshCounts();
+setInterval(refreshClocks, 10000);
+setInterval(refreshStats, 5000);
+setInterval(refreshStatus, 30000);
+setInterval(refreshCounts, 60000);
+</script>
+</body>
+</html>

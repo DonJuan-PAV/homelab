@@ -1,0 +1,17 @@
+# Never commit secrets or app data, even if collect.sh missed something
+.env
+*.db
+*.sqlite
+*token*.json
+data/
+config/
+cache/
+gluetun/
+incomplete/
+downloads/
+media/
+music/
+__pycache__/
+.venv/
+etc-pihole/
+etc-dnsmasq.d/

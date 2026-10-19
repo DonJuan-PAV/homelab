@@ -1,0 +1,31 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    user: "${PUID:-1000}:${PGID:-1000}"
+    ports:
+      - "8096:8096"
+    volumes:
+      - ./jellyfin/config:/config
+      - ./jellyfin/cache:/cache
+      - ${MEDIA_DIR:-./media}:/media
+    restart: unless-stopped
+    # Optional: faster video conversion with an Intel/AMD graphics chip.
+    # Uncomment the 4 lines below if `ls /dev/dri` on the server shows renderD128.
+    # devices:
+    #   - /dev/dri:/dev/dri
+    # group_add:
+    #   - "${RENDER_GID:-109}"     # run: getent group render | cut -d: -f3
+
+  filebrowser:
+    image: gtstef/filebrowser:stable
+    container_name: filebrowser
+    ports:
+      - "8085:80"
+    volumes:
+      - ${MEDIA_DIR:-./media}:/srv/Videos          # upload videos here; Jellyfin sees them
+      - ${MUSIC_DIR:-../yt2mp3/music}:/srv/Music   # same music folder Navidrome plays
+      - ./filebrowser-data:/home/filebrowser/data  # settings and accounts
+    environment:
+      - FILEBROWSER_ADMIN_PASSWORD=${FILEBROWSER_PASSWORD}
+    restart: unless-stopped

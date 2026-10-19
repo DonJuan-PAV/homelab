@@ -1,0 +1,11 @@
+services:
+  mail-notifier:
+    build: .
+    container_name: mail-notifier
+    restart: unless-stopped                # restart after a crash or a reboot
+    env_file: .env                         # your settings, never inside the image
+    volumes:
+      - ./data:/app/data                   # counts + Outlook login survive updates
+      - /etc/localtime:/etc/localtime:ro   # server's time zone, so "today" resets at midnight
+    ports:
+      - "8090:8080"                        # Homepage reads http://SERVER-IP:8090/stats

@@ -1,0 +1,38 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun:v3
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN                     # lets it create the VPN tunnel
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=nordvpn
+      - VPN_TYPE=openvpn
+      - OPENVPN_USER=${NORD_USER}
+      - OPENVPN_PASSWORD=${NORD_PASSWORD}
+      - SERVER_COUNTRIES=Canada       # nearby = faster; change any time
+      - TZ=America/Toronto
+    ports:
+      - "8070:8070"                   # qBittorrent's web page (it lives on Gluetun's network)
+    volumes:
+      - ./gluetun:/gluetun
+    restart: unless-stopped
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"   # ALL its traffic goes through the VPN; no VPN = no internet
+    depends_on:
+      gluetun:
+        condition: service_healthy    # waits until the VPN is connected
+    environment:
+      - PUID=1000                     # files belong to juan
+      - PGID=1000
+      - TZ=America/Toronto
+      - WEBUI_PORT=8070
+    volumes:
+      - ./config:/config
+      - ./incomplete:/incomplete
+      - /home/juan/media-server/media/Downloads:/downloads
+    restart: unless-stopped
