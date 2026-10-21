@@ -1,0 +1,4 @@
+filenames:
+  - /home/juan/media-server/jellyfin/config/log/*.log
+labels:
+  type: jellyfin

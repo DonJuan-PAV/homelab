@@ -1,0 +1,4 @@
+filenames:
+  - /home/juan/caddy/logs/*.log
+labels:
+  type: caddy

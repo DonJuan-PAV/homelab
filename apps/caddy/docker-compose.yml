@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     network_mode: host
     volumes:
+      - ./logs:/var/log/caddy
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config

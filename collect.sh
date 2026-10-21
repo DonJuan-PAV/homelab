@@ -91,6 +91,26 @@ if (( ${#not_compose[@]} )); then
   printf '   %s\n' "${not_compose[@]}"
 fi
 
+# Security settings that live outside Docker: the ufw firewall rules and which
+# logs CrowdSec watches. Reading them needs sudo (you'll be asked for your
+# password). The files are written by you, not root, so git can always read them.
+# Never copied: the bouncer config (it holds an API key) and CrowdSec's database.
+SEC="$REPO/security"
+echo
+if command -v ufw >/dev/null && command -v cscli >/dev/null && sudo -v; then
+  mkdir -p "$SEC/crowdsec/acquis.d"
+  sudo ufw status verbose > "$SEC/ufw-rules.txt"
+  for name in $(sudo ls /etc/crowdsec/acquis.d); do
+    case "$name" in
+      *.yaml) sudo cat "/etc/crowdsec/acquis.d/$name" > "$SEC/crowdsec/acquis.d/$name" ;;
+    esac
+  done
+  sudo cscli collections list -o raw > "$SEC/crowdsec/collections.csv"
+  echo "-> wrote security/ (ufw rules, CrowdSec log sources and collections)"
+else
+  echo "-- security/ skipped (ufw or CrowdSec not found, or no sudo)"
+fi
+
 # Look for secrets written in plain text: a password/token/key followed by a
 # real value (not empty, and not a ${VARIABLE} reference)
 echo
@@ -99,7 +119,7 @@ echo "Checking for secrets..."
 hits=$(grep -rniE --include='*.yml' --include='*.yaml' --include='*.conf' --include='*.toml' \
      --include='*.sh' --include='*.env' --include='Caddyfile' \
      '(pass(word|wd)?|secret|token|api[_-]?key|private[_-]?key|credential|pwhash|hash)[A-Za-z0-9_]*["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[^[:space:]$"'"'"'{}]' \
-     "$APPS" | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true)
+     "$APPS" "$SEC" 2>/dev/null | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true)
 if [[ -n "$hits" ]]; then
   echo "$hits"
   echo

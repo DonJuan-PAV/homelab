@@ -1,0 +1,15 @@
+services:
+  cloudflare-ddns:
+    image: favonia/cloudflare-ddns:latest
+    container_name: cloudflare-ddns
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - CF_API_TOKEN=${CF_API_TOKEN}
+      - DOMAINS=movies.ricamivida.com
+      - PROXIED=false
+      - IP6_PROVIDER=none
+      - UPDATE_CRON=@every 5m
+      - PUID=1000
+      - PGID=1000

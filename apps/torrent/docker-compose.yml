@@ -14,7 +14,7 @@ services:
       - SERVER_COUNTRIES=Canada       # nearby = faster; change any time
       - TZ=America/Toronto
     ports:
-      - "8070:8070"                   # qBittorrent's web page (it lives on Gluetun's network)
+      - "127.0.0.1:8070:8070"                   # qBittorrent's web page (it lives on Gluetun's network)
     volumes:
       - ./gluetun:/gluetun
     restart: unless-stopped

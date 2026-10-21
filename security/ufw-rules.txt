@@ -1,0 +1,21 @@
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+Anywhere on tailscale0     ALLOW IN    Anywhere                   # Everything from my Tailscale devices
+22/tcp                     ALLOW IN    192.168.0.0/24             # SSH from home
+41641/udp                  ALLOW IN    Anywhere                   # Tailscale direct connections
+80/tcp                     ALLOW IN    Anywhere                   # Caddy (HTTPS certificates, redirects)
+443/tcp                    ALLOW IN    Anywhere                   # Caddy (public sites)
+80,443/tcp                 ALLOW IN    172.16.0.0/12              # Containers reaching Caddy
+53                         ALLOW IN    192.168.0.0/24             # Pi-hole DNS from home
+3001/tcp                   ALLOW IN    192.168.0.0/24             # Uptime Kuma from home
+3001/tcp                   ALLOW IN    172.16.0.0/12              # Home Base status check
+Anywhere (v6) on tailscale0 ALLOW IN    Anywhere (v6)              # Everything from my Tailscale devices
+41641/udp (v6)             ALLOW IN    Anywhere (v6)              # Tailscale direct connections
+80/tcp (v6)                ALLOW IN    Anywhere (v6)              # Caddy (HTTPS certificates, redirects)
+443/tcp (v6)               ALLOW IN    Anywhere (v6)              # Caddy (public sites)
+
