@@ -18,7 +18,8 @@ mkdir -p "$APPS"
 
 # Folders that hold app data, media or logins: never copied
 SKIP_DIRS=(.git .venv venv node_modules __pycache__ data config cache music media
-           gluetun incomplete downloads filebrowser-data jellyfin logs backups etc-pihole etc-dnsmasq.d)
+           gluetun incomplete downloads filebrowser-data jellyfin logs backups
+           etc-pihole etc-dnsmasq.d)
 
 # Only these kinds of files are copied, and only if smaller than 200 KB
 KEEP_NAMES=(Dockerfile '*.yml' '*.yaml' '*.py' '*.html' '*.css' '*.js' '*.svg'
@@ -58,7 +59,10 @@ for container in $(docker ps --format '{{.Names}}'); do
 
   # .env holds secrets: publish only the variable names
   if [[ -f "$workdir/.env" ]]; then
-    sed -E 's/^([A-Za-z_][A-Za-z0-9_]*)=.*/\1=/' "$workdir/.env" > "$dest/.env.example"
+    # keep comments and blank lines, blank every value, drop anything else
+    sed -nE -e '/^[[:space:]]*(#|$)/p' \
+        -e 's/^[[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=.*/\2=/p' \
+        "$workdir/.env" > "$dest/.env.example"
     echo "   wrote .env.example (values removed)"
   fi
 done
@@ -88,7 +92,7 @@ fi
 echo
 echo "Checking for secrets..."
 if grep -rniE --include='*.yml' --include='*.yaml' --include='*.conf' --include='*.toml' \
-     --include='*.sh' --include='*.env' \
+     --include='*.sh' --include='*.env' --include='.env.example' \
      '(pass(word|wd)?|secret|token|api[_-]?key|private[_-]?key|credential|pwhash|hash)[A-Za-z0-9_]*["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[^[:space:]$"'"'"'{}]' \
      "$APPS"; then
   echo
