@@ -4,7 +4,7 @@ services:
     container_name: vaultwarden
     restart: unless-stopped
     environment:
-      DOMAIN: "https://juanito.tail358c85.ts.net"     # set in step 4
+      DOMAIN: "https://juanito.<tailnet>.ts.net"     # set in step 4
       SIGNUPS_ALLOWED: "false"         # turned off after you create your account
     volumes:
       - ./data:/data                  # your encrypted vault

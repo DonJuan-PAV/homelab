@@ -111,6 +111,16 @@ else
   echo "-- security/ skipped (ufw or CrowdSec not found, or no sudo)"
 fi
 
+# Hide my Tailscale network's name in the copies (only the copies in this repo,
+# never the real files): juanito.tail1234.ts.net becomes juanito.<tailnet>.ts.net
+hidden=$(grep -rlE 'tail[0-9a-f]+\.ts\.net' "$APPS" "$SEC" 2>/dev/null || true)
+if [[ -n "$hidden" ]]; then
+  echo "$hidden" | while read -r file; do
+    sed -i -E 's/tail[0-9a-f]+\.ts\.net/<tailnet>.ts.net/g' "$file"
+  done
+  echo "-> hid the Tailscale network name in $(echo "$hidden" | wc -l) file(s)"
+fi
+
 # Look for secrets written in plain text: a password/token/key followed by a
 # real value (not empty, and not a ${VARIABLE} reference)
 echo

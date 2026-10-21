@@ -48,7 +48,7 @@ groups:
         icon: filebrowser
       - name: qBittorrent
         description: Paste a torrent or magnet link to download through the VPN
-        url: https://juanito.tail358c85.ts.net:8070
+        url: https://juanito.<tailnet>.ts.net:8070
         icon: qbittorrent
 
   - name: Admin
@@ -69,7 +69,7 @@ groups:
           today: Total today
       - name: Portainer
         description: See and manage your Docker containers
-        url: https://juanito.tail358c85.ts.net:9443
+        url: https://juanito.<tailnet>.ts.net:9443
         icon: portainer
       - name: Tailscale
         description: Devices that can reach this server from outside
@@ -77,11 +77,11 @@ groups:
         icon: tailscale
       - name: Pi-hole
         description: Blocks ads for every device at home
-        url: https://juanito.tail358c85.ts.net:8053/admin
+        url: https://juanito.<tailnet>.ts.net:8053/admin
         icon: pi-hole
       - name: Vaultwarden
         description: Your own password manager
-        url: https://juanito.tail358c85.ts.net
+        url: https://juanito.<tailnet>.ts.net
         icon: vaultwarden
   - name: Travel
     apps:
