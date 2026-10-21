@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Server Map · juanito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f1eee7; --dot: #d9d4c8; --ink: #151515; --card: #161616; --card2: #202020;
+    --line: #2e2e2e; --text: #ece9e2; --muted: #8f8b83; --accent: #ff6a1a; --ok: #5fd38d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink); font: 15px/1.5 "Instrument Sans", system-ui, sans-serif;
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--dot) 1px, transparent 1.2px);
+    background-size: 14px 14px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+  h1 { font: 700 clamp(28px, 5vw, 44px)/1 "Unbounded", sans-serif; margin: 0; letter-spacing: -0.02em; }
+  h1 span { color: var(--accent); }
+  .updated { color: #6b675f; font-size: 13px; margin-top: 8px; }
+  input[type=search] {
+    width: min(340px, 100%); padding: 12px 16px; border-radius: 999px; border: 2px solid var(--ink);
+    background: #fff; font: inherit; outline: none;
+  }
+  input[type=search]:focus { border-color: var(--accent); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .tile { background: var(--card); color: var(--text); border-radius: 18px; padding: 16px 18px; display: flex; flex-direction: column; gap: 2px; }
+  .tile .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+  .tile .value { font: 600 19px "Unbounded", sans-serif; word-break: break-all; }
+  .sub { color: var(--muted); font-size: 12.5px; }
+  section { background: var(--card); color: var(--text); border-radius: 22px; padding: 22px; margin-bottom: 20px; overflow-x: auto; }
+  h2 { font: 600 17px "Unbounded", sans-serif; margin: 0 0 14px; }
+  h2::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); margin-right: 10px; }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  td { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  code { font: 12.5px ui-monospace, "SF Mono", Consolas, monospace; background: var(--card2); padding: 2px 6px; border-radius: 6px; color: #f3d9c9; word-break: break-all; }
+  a { color: var(--text); text-decoration-color: var(--accent); text-underline-offset: 3px; }
+  a:hover { color: var(--accent); }
+  a.public { color: var(--accent); font-weight: 600; }
+  .chip { display: inline-block; background: var(--card2); border-radius: 8px; padding: 1px 8px; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; font-size: 11px; border: 1px solid #4a4a4a; color: var(--muted); border-radius: 999px; padding: 0 8px; margin: 2px 0; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; }
+  .dot.on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .dot.off { background: #e5484d; }
+  .ok { color: var(--ok); font-size: 12px; margin-left: 6px; }
+  .muted { color: var(--muted); }
+  .warn { background: var(--accent); color: #1a0d05; }
+  .warn h2::before { background: #1a0d05; }
+  .warn code { background: rgba(0,0,0,.12); color: inherit; }
+  details { border-bottom: 1px solid var(--line); padding: 10px 0; }
+  details:last-child { border-bottom: 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  summary:hover { color: var(--accent); }
+  details ul { margin: 8px 0 0; padding-left: 18px; }
+  details li { margin: 4px 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid2 section { margin-bottom: 0; }
+  .notes h3 { font: 600 14px "Unbounded", sans-serif; color: var(--accent); margin: 18px 0 6px; }
+  .notes h3:first-child { margin-top: 0; }
+  .notes ul { margin: 0; padding-left: 18px; }
+  footer { text-align: center; color: #6b675f; font-size: 13px; margin-top: 28px; }
+  .hidden { display: none !important; }
+  @media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } .grid2 section { margin-bottom: 20px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Server Map<span>.</span></h1>
+      <div class="updated">juanito · updated Wed Oct 21, 2026 · 02:00</div>
+    </div>
+    <input type="search" id="q" placeholder="Search an app, port or folder…" autocomplete="off">
+  </header>
+
+  <div class="tiles"><div class='tile'><span class='label'>Machine</span><span class='value'>juanito</span><span class='sub'>Ubuntu 26.04.1 LTS</span></div><div class='tile'><span class='label'>Home IP</span><span class='value'>192.168.0.18</span><span class='sub'>inside your home network</span></div><div class='tile'><span class='label'>Tailscale</span><span class='value'>100.91.119.112</span><span class='sub'>juanito.tail358c85.ts.net</span></div><div class='tile'><span class='label'>Public IP</span><span class='value'>96.20.183.120</span><span class='sub'>what the internet sees</span></div><div class='tile'><span class='label'>Containers</span><span class='value'>16 / 16</span><span class='sub'>running / total</span></div><div class='tile'><span class='label'>Disk</span><span class='value'>130 GB / 1005 GB</span><span class='sub'>12% used</span></div><div class='tile'><span class='label'>Memory</span><span class='value'>1.6 / 9.0 GB</span><span class='sub'>used / total</span></div><div class='tile'><span class='label'>Uptime</span><span class='value'>0d 7h 33m</span><span class='sub'>since last reboot</span></div></div>
+  
+
+  <section>
+    <h2>Apps</h2>
+    <table class="filter">
+      <thead><tr><th>App</th><th>Ports (server → app)</th><th>Open</th><th>Folder</th><th>Restart</th></tr></thead>
+      <tbody><tr data-search='caddy caddy:latest /home/juan/caddy 80 443'><td><span class='dot on'></span><strong>caddy</strong><div class='sub'>caddy:latest</div></td><td><span class='chip'>80 → 80/tcp</span><br><span class='chip'>443 → 443/tcp</span><br><span class='badge'>host network</span></td><td class='links'><a href='http://192.168.0.18:80' target='_blank'>home</a> · <a href='http://100.91.119.112:80' target='_blank'>tailscale</a></td><td><code>/home/juan/caddy</code></td><td>unless-stopped</td></tr><tr data-search='filebrowser gtstef/filebrowser:stable /home/juan/media-server 8085'><td><span class='dot on'></span><strong>filebrowser</strong><div class='sub'>gtstef/filebrowser:stable</div></td><td><span class='chip'>8085 → 80/tcp</span></td><td class='links'><a href='http://192.168.0.18:8085' target='_blank'>home</a> · <a href='http://100.91.119.112:8085' target='_blank'>tailscale</a></td><td><code>/home/juan/media-server</code></td><td>unless-stopped</td></tr><tr data-search='flight-db postgres:17 /home/juan/flight-tracker 5432'><td><span class='dot on'></span><strong>flight-db</strong><div class='sub'>postgres:17</div></td><td><span class='chip'>5432 → 5432/tcp</span> <span class='badge'>server only</span></td><td class='links'><span class=muted>—</span></td><td><code>/home/juan/flight-tracker</code></td><td>unless-stopped</td></tr><tr data-search='flight-grafana grafana/grafana:latest /home/juan/flight-tracker 8095'><td><span class='dot on'></span><strong>flight-grafana</strong><div class='sub'>grafana/grafana:latest</div></td><td><span class='chip'>8095 → 3000/tcp</span></td><td class='links'><a href='http://192.168.0.18:8095' target='_blank'>home</a> · <a href='http://100.91.119.112:8095' target='_blank'>tailscale</a></td><td><code>/home/juan/flight-tracker</code></td><td>unless-stopped</td></tr><tr data-search='gluetun qmcgaw/gluetun:v3 /home/juan/torrent 8070'><td><span class='dot on'></span><strong>gluetun</strong><div class='sub'>qmcgaw/gluetun:v3</div></td><td><span class='chip'>8070 → 8070/tcp</span><br><span class='badge'>also serves qbittorrent</span></td><td class='links'><a href='http://192.168.0.18:8070' target='_blank'>home</a> · <a href='http://100.91.119.112:8070' target='_blank'>tailscale</a></td><td><code>/home/juan/torrent</code></td><td>unless-stopped</td></tr><tr data-search='homepage homepage-homepage /home/juan/homepage 8088'><td><span class='dot on'></span><strong>homepage</strong><div class='sub'>homepage-homepage</div></td><td><span class='chip'>8088 → 8000/tcp</span></td><td class='links'><a href='http://192.168.0.18:8088' target='_blank'>home</a> · <a href='http://100.91.119.112:8088' target='_blank'>tailscale</a></td><td><code>/home/juan/homepage</code></td><td>unless-stopped</td></tr><tr data-search='jellyfin jellyfin/jellyfin:latest /home/juan/media-server 8096 movies.ricamivida.com'><td><span class='dot on'></span><strong>jellyfin</strong><div class='sub'>jellyfin/jellyfin:latest</div></td><td><span class='chip'>8096 → 8096/tcp</span></td><td class='links'><a class='public' href='https://movies.ricamivida.com' target='_blank'>movies.ricamivida.com</a> · <a href='http://192.168.0.18:8096' target='_blank'>home</a> · <a href='http://100.91.119.112:8096' target='_blank'>tailscale</a></td><td><code>/home/juan/media-server</code></td><td>unless-stopped</td></tr><tr data-search='mail-notifier mail-notifier-mail-notifier /home/juan/mail-notifier 8090'><td><span class='dot on'></span><strong>mail-notifier</strong><div class='sub'>mail-notifier-mail-notifier</div></td><td><span class='chip'>8090 → 8080/tcp</span></td><td class='links'><a href='http://192.168.0.18:8090' target='_blank'>home</a> · <a href='http://100.91.119.112:8090' target='_blank'>tailscale</a></td><td><code>/home/juan/mail-notifier</code></td><td>unless-stopped</td></tr><tr data-search='navidrome deluan/navidrome:latest /home/juan/yt2mp3 4533'><td><span class='dot on'></span><strong>navidrome</strong><div class='sub'>deluan/navidrome:latest</div></td><td><span class='chip'>4533 → 4533/tcp</span></td><td class='links'><a href='http://192.168.0.18:4533' target='_blank'>home</a> · <a href='http://100.91.119.112:4533' target='_blank'>tailscale</a></td><td><code>/home/juan/yt2mp3</code></td><td>unless-stopped</td></tr><tr data-search='pihole pihole/pihole:latest /home/juan/pihole 53 53 8053'><td><span class='dot on'></span><strong>pihole</strong><div class='sub'>pihole/pihole:latest</div></td><td><span class='chip'>53 → 53/tcp</span><br><span class='chip'>53 → 53/udp</span><br><span class='chip'>8053 → 80/tcp</span></td><td class='links'><a href='http://192.168.0.18:8053' target='_blank'>home</a> · <a href='http://100.91.119.112:8053' target='_blank'>tailscale</a></td><td><code>/home/juan/pihole</code></td><td>unless-stopped</td></tr><tr data-search='portainer portainer/portainer-ce:lts  9443'><td><span class='dot on'></span><strong>portainer</strong><div class='sub'>portainer/portainer-ce:lts</div></td><td><span class='chip'>9443 → 9443/tcp</span></td><td class='links'><a href='http://192.168.0.18:9443' target='_blank'>home</a> · <a href='http://100.91.119.112:9443' target='_blank'>tailscale</a></td><td><code>—</code></td><td>always</td></tr><tr data-search='qbittorrent lscr.io/linuxserver/qbittorrent:latest /home/juan/torrent'><td><span class='dot on'></span><strong>qbittorrent</strong><div class='sub'>lscr.io/linuxserver/qbittorrent:latest</div></td><td><span class='badge'>uses gluetun's network</span></td><td class='links'><span class=muted>—</span></td><td><code>/home/juan/torrent</code></td><td>unless-stopped</td></tr><tr data-search='server-map nginx:alpine /home/juan/server-map 8099'><td><span class='dot on'></span><strong>server-map</strong><div class='sub'>nginx:alpine</div></td><td><span class='chip'>8099 → 80/tcp</span></td><td class='links'><a href='http://192.168.0.18:8099' target='_blank'>home</a> · <a href='http://100.91.119.112:8099' target='_blank'>tailscale</a></td><td><code>/home/juan/server-map</code></td><td>unless-stopped</td></tr><tr data-search='uptime-kuma louislam/uptime-kuma:2 /home/juan/uptime-kuma 3001'><td><span class='dot on'></span><strong>uptime-kuma</strong><div class='sub'>louislam/uptime-kuma:2</div></td><td><span class='chip'>3001 → 3001/tcp</span></td><td class='links'><a href='http://192.168.0.18:3001' target='_blank'>home</a> · <a href='http://100.91.119.112:3001' target='_blank'>tailscale</a></td><td><code>/home/juan/uptime-kuma</code></td><td>unless-stopped</td></tr><tr data-search='vaultwarden vaultwarden/server:latest /home/juan/vaultwarden 8222'><td><span class='dot on'></span><strong>vaultwarden</strong><div class='sub'>vaultwarden/server:latest</div></td><td><span class='chip'>8222 → 80/tcp</span> <span class='badge'>server only</span></td><td class='links'><span class=muted>—</span></td><td><code>/home/juan/vaultwarden</code></td><td>unless-stopped</td></tr><tr data-search='yt2mp3 yt2mp3-yt2mp3 /home/juan/yt2mp3 8080'><td><span class='dot on'></span><strong>yt2mp3</strong><div class='sub'>yt2mp3-yt2mp3</div></td><td><span class='chip'>8080 → 8080/tcp</span></td><td class='links'><a href='http://192.168.0.18:8080' target='_blank'>home</a> · <a href='http://100.91.119.112:8080' target='_blank'>tailscale</a></td><td><code>/home/juan/yt2mp3</code></td><td>unless-stopped</td></tr></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Public domains</h2>
+    <table class="filter">
+      <thead><tr><th>Address</th><th>Caddy sends it to</th><th>App</th><th>Domain points to</th></tr></thead>
+      <tbody><tr data-search='movies.ricamivida.com jellyfin'><td><a class='public' href='https://movies.ricamivida.com' target='_blank'>movies.ricamivida.com</a></td><td><code>localhost:8096</code></td><td>jellyfin</td><td>96.20.183.120 <span class=ok>✓ matches</span></td></tr></tbody>
+    </table>
+  </section>
+
+  <div class="grid2">
+    <section>
+      <h2>Port index</h2>
+      <table class="filter" style="min-width:0">
+        <thead><tr><th>Port</th><th>Inside</th><th>App</th><th>Reachable from</th></tr></thead>
+        <tbody><tr data-search='53 pihole'><td><strong>53</strong></td><td>53/tcp</td><td>pihole</td><td>home + tailscale</td></tr><tr data-search='53 pihole'><td><strong>53</strong></td><td>53/udp</td><td>pihole</td><td>home + tailscale</td></tr><tr data-search='80 caddy'><td><strong>80</strong></td><td>80/tcp</td><td>caddy</td><td>public (router forwards it)</td></tr><tr data-search='443 caddy'><td><strong>443</strong></td><td>443/tcp</td><td>caddy</td><td>public (router forwards it)</td></tr><tr data-search='3001 uptime-kuma'><td><strong>3001</strong></td><td>3001/tcp</td><td>uptime-kuma</td><td>home + tailscale</td></tr><tr data-search='4533 navidrome'><td><strong>4533</strong></td><td>4533/tcp</td><td>navidrome</td><td>home + tailscale</td></tr><tr data-search='5432 flight-db'><td><strong>5432</strong></td><td>5432/tcp</td><td>flight-db</td><td>server only</td></tr><tr data-search='8053 pihole'><td><strong>8053</strong></td><td>80/tcp</td><td>pihole</td><td>home + tailscale</td></tr><tr data-search='8070 gluetun'><td><strong>8070</strong></td><td>8070/tcp</td><td>gluetun</td><td>home + tailscale</td></tr><tr data-search='8080 yt2mp3'><td><strong>8080</strong></td><td>8080/tcp</td><td>yt2mp3</td><td>home + tailscale</td></tr><tr data-search='8085 filebrowser'><td><strong>8085</strong></td><td>80/tcp</td><td>filebrowser</td><td>home + tailscale</td></tr><tr data-search='8088 homepage'><td><strong>8088</strong></td><td>8000/tcp</td><td>homepage</td><td>home + tailscale</td></tr><tr data-search='8090 mail-notifier'><td><strong>8090</strong></td><td>8080/tcp</td><td>mail-notifier</td><td>home + tailscale</td></tr><tr data-search='8095 flight-grafana'><td><strong>8095</strong></td><td>3000/tcp</td><td>flight-grafana</td><td>home + tailscale</td></tr><tr data-search='8096 jellyfin'><td><strong>8096</strong></td><td>8096/tcp</td><td>jellyfin</td><td>home + tailscale</td></tr><tr data-search='8099 server-map'><td><strong>8099</strong></td><td>80/tcp</td><td>server-map</td><td>home + tailscale</td></tr><tr data-search='8222 vaultwarden'><td><strong>8222</strong></td><td>80/tcp</td><td>vaultwarden</td><td>server only</td></tr><tr data-search='9443 portainer'><td><strong>9443</strong></td><td>9443/tcp</td><td>portainer</td><td>home + tailscale</td></tr></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Folders &amp; storage</h2>
+      <div class="filter-details"><details data-search='caddy volume: caddy_caddy_config volume: caddy_caddy_data /home/juan/caddy/caddyfile'><summary>caddy</summary><div class='sub'>settings file: <code>/home/juan/caddy/docker-compose.yml</code></div><ul><li><code>volume: caddy_caddy_config</code> → <code>/config</code></li><li><code>volume: caddy_caddy_data</code> → <code>/data</code></li><li><code>/home/juan/caddy/Caddyfile</code> → <code>/etc/caddy/Caddyfile</code></li></ul></details><details data-search='filebrowser /home/juan/yt2mp3/music /home/juan/media-server/media /home/juan/media-server/filebrowser-data'><summary>filebrowser</summary><div class='sub'>settings file: <code>/home/juan/media-server/docker-compose.yml</code></div><ul><li><code>/home/juan/yt2mp3/music</code> → <code>/srv/Music</code></li><li><code>/home/juan/media-server/media</code> → <code>/srv/Videos</code></li><li><code>/home/juan/media-server/filebrowser-data</code> → <code>/home/filebrowser/data</code></li></ul></details><details data-search='flight-db /home/juan/flight-tracker/schema.sql /home/juan/flight-tracker/pgdata'><summary>flight-db</summary><div class='sub'>settings file: <code>/home/juan/flight-tracker/docker-compose.yml</code></div><ul><li><code>/home/juan/flight-tracker/schema.sql</code> → <code>/docker-entrypoint-initdb.d/schema.sql</code> <span class=badge>read-only</span></li><li><code>/home/juan/flight-tracker/pgdata</code> → <code>/var/lib/postgresql/data</code></li></ul></details><details data-search='flight-grafana /home/juan/flight-tracker/grafana/provisioning volume: flight-tracker_grafana-data'><summary>flight-grafana</summary><div class='sub'>settings file: <code>/home/juan/flight-tracker/docker-compose.yml</code></div><ul><li><code>/home/juan/flight-tracker/grafana/provisioning</code> → <code>/etc/grafana/provisioning</code> <span class=badge>read-only</span></li><li><code>volume: flight-tracker_grafana-data</code> → <code>/var/lib/grafana</code></li></ul></details><details data-search='gluetun /home/juan/torrent/gluetun'><summary>gluetun</summary><div class='sub'>settings file: <code>/home/juan/torrent/docker-compose.yml</code></div><ul><li><code>/home/juan/torrent/gluetun</code> → <code>/gluetun</code></li></ul></details><details data-search='homepage / /home/juan/homepage/apps.yaml /home/juan/homepage/icons'><summary>homepage</summary><div class='sub'>settings file: <code>/home/juan/homepage/docker-compose.yml</code></div><ul><li><code>/</code> → <code>/host</code> <span class=badge>read-only</span></li><li><code>/home/juan/homepage/apps.yaml</code> → <code>/config/apps.yaml</code> <span class=badge>read-only</span></li><li><code>/home/juan/homepage/icons</code> → <code>/config/icons</code> <span class=badge>read-only</span></li></ul></details><details data-search='jellyfin /home/juan/media-server/jellyfin/cache /home/juan/media-server/jellyfin/config /home/juan/media-server/media'><summary>jellyfin</summary><div class='sub'>settings file: <code>/home/juan/media-server/docker-compose.yml</code></div><ul><li><code>/home/juan/media-server/jellyfin/cache</code> → <code>/cache</code></li><li><code>/home/juan/media-server/jellyfin/config</code> → <code>/config</code></li><li><code>/home/juan/media-server/media</code> → <code>/media</code> <span class=badge>read-only</span></li></ul></details><details data-search='mail-notifier /home/juan/mail-notifier/data /etc/localtime'><summary>mail-notifier</summary><div class='sub'>settings file: <code>/home/juan/mail-notifier/docker-compose.yml</code></div><ul><li><code>/home/juan/mail-notifier/data</code> → <code>/app/data</code></li><li><code>/etc/localtime</code> → <code>/etc/localtime</code> <span class=badge>read-only</span></li></ul></details><details data-search='navidrome /home/juan/yt2mp3/navidrome-data /home/juan/yt2mp3/music'><summary>navidrome</summary><div class='sub'>settings file: <code>/home/juan/yt2mp3/docker-compose.yml</code></div><ul><li><code>/home/juan/yt2mp3/navidrome-data</code> → <code>/data</code></li><li><code>/home/juan/yt2mp3/music</code> → <code>/music</code> <span class=badge>read-only</span></li></ul></details><details data-search='pihole /home/juan/pihole/etc-pihole'><summary>pihole</summary><div class='sub'>settings file: <code>/home/juan/pihole/docker-compose.yml</code></div><ul><li><code>/home/juan/pihole/etc-pihole</code> → <code>/etc/pihole</code></li></ul></details><details data-search='portainer volume: portainer_data /var/run/docker.sock'><summary>portainer</summary><ul><li><code>volume: portainer_data</code> → <code>/data</code></li><li><code>/var/run/docker.sock</code> → <code>/var/run/docker.sock</code></li></ul></details><details data-search='qbittorrent /home/juan/torrent/config /home/juan/media-server/media/downloads /home/juan/torrent/incomplete'><summary>qbittorrent</summary><div class='sub'>settings file: <code>/home/juan/torrent/docker-compose.yml</code></div><ul><li><code>/home/juan/torrent/config</code> → <code>/config</code></li><li><code>/home/juan/media-server/media/Downloads</code> → <code>/downloads</code></li><li><code>/home/juan/torrent/incomplete</code> → <code>/incomplete</code></li></ul></details><details data-search='server-map /home/juan/server-map/output'><summary>server-map</summary><div class='sub'>settings file: <code>/home/juan/server-map/docker-compose.yml</code></div><ul><li><code>/home/juan/server-map/output</code> → <code>/usr/share/nginx/html</code> <span class=badge>read-only</span></li></ul></details><details data-search='uptime-kuma /home/juan/uptime-kuma/data'><summary>uptime-kuma</summary><div class='sub'>settings file: <code>/home/juan/uptime-kuma/docker-compose.yml</code></div><ul><li><code>/home/juan/uptime-kuma/data</code> → <code>/app/data</code></li></ul></details><details data-search='vaultwarden /home/juan/vaultwarden/data'><summary>vaultwarden</summary><div class='sub'>settings file: <code>/home/juan/vaultwarden/docker-compose.yml</code></div><ul><li><code>/home/juan/vaultwarden/data</code> → <code>/data</code></li></ul></details><details data-search='yt2mp3 volume: yt2mp3_yt2mp3-data /home/juan/yt2mp3/music'><summary>yt2mp3</summary><div class='sub'>settings file: <code>/home/juan/yt2mp3/docker-compose.yml</code></div><ul><li><code>volume: yt2mp3_yt2mp3-data</code> → <code>/data</code></li><li><code>/home/juan/yt2mp3/music</code> → <code>/music</code></li></ul></details></div>
+    </section>
+  </div>
+  <div style="height:20px"></div>
+
+  <div class="grid2">
+    <section class="notes">
+      <h2>My notes</h2>
+      <h3>Router (Fizz)</h3>
+<ul>
+<li>Admin page: <code>http://192.168.0.1</code></li>
+<li>Port forwarding: TCP <strong>80</strong> and <strong>443</strong> → the Ubuntu server (for Caddy). Nothing else.</li>
+<li>DHCP reservation keeps the server&#x27;s home IP from changing</li>
+<li>UPnP: off</li>
+</ul>
+<h3>Domain</h3>
+<ul>
+<li><code>ricamivida.com</code> registered at GoDaddy</li>
+<li>A record <code>movies</code> → home public IP (update it if the &quot;Heads up&quot; box says the IP changed)</li>
+</ul>
+<h3>Caddy</h3>
+<ul>
+<li>Folder: <code>~/caddy</code> (Caddyfile + docker-compose.yml)</li>
+<li><code>default_bind</code> is set to the server&#x27;s home IP so it doesn&#x27;t clash with Tailscale on port 443</li>
+<li>To add a new public app: add a block to the Caddyfile, add an A record at GoDaddy, then <code>docker compose restart</code></li>
+</ul>
+<h3>Private only (never expose through Caddy)</h3>
+<ul>
+<li>Portainer, qBittorrent, Vaultwarden, Pi-hole, Home Base, File Browser, this map</li>
+<li>Vaultwarden is reached through Tailscale at the server&#x27;s .ts.net address</li>
+</ul>
+<h3>Jellyfin</h3>
+<ul>
+<li>Media folder is mounted read-only</li>
+<li>Admin account: home/Tailscale only, hidden from login screen</li>
+<li>Has its own DNS (1.1.1.1 / 8.8.8.8) in docker-compose.yml so metadata lookups work</li>
+</ul>
+<h3>Backups</h3>
+<ul>
+<li>restic in <code>~/backup-system</code>, runs nightly from root&#x27;s crontab</li>
+<li>Copies to the USB key and an encrypted Google Drive copy</li>
+<li>Movies/shows are not backed up</li>
+</ul>
+<h3>Never write passwords in this file</h3>
+    </section>
+    <section>
+      <h2>Scheduled jobs</h2>
+      <ul><li><code>0 12 * * 3 cd /home/juan/flight-tracker &amp;&amp; /usr/bin/docker compose run --rm tracker &gt;&gt; /home/juan/flight-tracker/scanner.log 2&gt;&amp;1</code></li><li><code>*/30 * * * * /usr/bin/python3 /home/juan/server-map/generate.py &gt;/dev/null 2&gt;&amp;1</code></li></ul>
+    </section>
+  </div>
+
+  <footer>Refresh now: <code style="color:#151515;background:#e4dfd4">python3 ~/server-map/generate.py</code></footer>
+</div>
+<script>
+  const q = document.getElementById("q");
+  q.addEventListener("input", () => {
+    const term = q.value.trim().toLowerCase();
+    document.querySelectorAll("table.filter tbody tr, .filter-details details").forEach(el => {
+      const hay = (el.dataset.search || el.textContent).toLowerCase();
+      el.classList.toggle("hidden", term !== "" && !hay.includes(term));
+    });
+  });
+</script>
+</body>
+</html>

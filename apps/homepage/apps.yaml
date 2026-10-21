@@ -53,6 +53,11 @@ groups:
 
   - name: Admin
     apps:
+      - name: Server Map
+        url: http://192.168.0.18:8099
+        icon: map
+        description: Ports, folders and IPs of everything
+        group: System
       - name: Important mail
         description: New important emails today
         port: 8090
@@ -76,6 +81,17 @@ groups:
         port: 8053
         path: /admin
         icon: pi-hole
+      - name: Vaultwarden
+        description: Your own password manager
+        url: https://juanito.tail358c85.ts.net
+        icon: vaultwarden
+  - name: Travel
+    apps:
+      - name: Flight Prices
+        description: Cheapest days to fly Montreal ? Amsterdam
+        port: 8095
+        path: /d/ad4mwtl/flight-price-ams-montreal
+        icon: grafana
 
   - name: Coming next
     apps:
@@ -87,13 +103,8 @@ groups:
       - name: Uptime Kuma
         description: Alerts you when an app goes down
         port: 3001
-        planned: true
+ 
         icon: uptime-kuma
-      - name: Vaultwarden
-        description: Your own password manager
-        port: 8222
-        planned: true
-        icon: vaultwarden
       - name: Paperless-ngx
         description: Scanned documents you can search
         port: 8010

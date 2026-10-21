@@ -18,11 +18,14 @@ mkdir -p "$APPS"
 
 # Folders that hold app data, media or logins: never copied
 SKIP_DIRS=(.git .venv venv node_modules __pycache__ data config cache music media
-           gluetun incomplete downloads filebrowser-data jellyfin logs backups
-           etc-pihole etc-dnsmasq.d)
+           gluetun incomplete downloads filebrowser-data jellyfin logs backups etc-pihole etc-dnsmasq.d
+           output vw-data pgdata postgres-data)   # output = server-map's page (shows the public IP)
+
+# Compose projects that have their own GitHub repo: not copied here
+SKIP_PROJECTS=(flight-tracker)
 
 # Only these kinds of files are copied, and only if smaller than 200 KB
-KEEP_NAMES=(Dockerfile '*.yml' '*.yaml' '*.py' '*.html' '*.css' '*.js' '*.svg'
+KEEP_NAMES=(Dockerfile Caddyfile '*.yml' '*.yaml' '*.py' '*.html' '*.css' '*.js' '*.svg'
             '*.md' '*.txt' '*.toml' '*.conf' '*.sh' '.env.example' '.dockerignore' '.gitignore')
 
 declare -A seen=()
@@ -38,6 +41,10 @@ for container in $(docker ps --format '{{.Names}}'); do
   fi
   [[ -n "${seen[$project]:-}" ]] && continue   # several containers, one project (e.g. torrent)
   seen[$project]=1
+  if [[ " ${SKIP_PROJECTS[*]} " == *" $project "* ]]; then
+    echo "-- $project  (has its own repo, skipped)"
+    continue
+  fi
 
   dest="$APPS/$project"
   mkdir -p "$dest"
@@ -59,10 +66,7 @@ for container in $(docker ps --format '{{.Names}}'); do
 
   # .env holds secrets: publish only the variable names
   if [[ -f "$workdir/.env" ]]; then
-    # keep comments and blank lines, blank every value, drop anything else
-    sed -nE -e '/^[[:space:]]*(#|$)/p' \
-        -e 's/^[[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=.*/\2=/p' \
-        "$workdir/.env" > "$dest/.env.example"
+    sed -E 's/^([A-Za-z_][A-Za-z0-9_]*)=.*/\1=/' "$workdir/.env" > "$dest/.env.example"
     echo "   wrote .env.example (values removed)"
   fi
 done
@@ -91,10 +95,13 @@ fi
 # real value (not empty, and not a ${VARIABLE} reference)
 echo
 echo "Checking for secrets..."
-if grep -rniE --include='*.yml' --include='*.yaml' --include='*.conf' --include='*.toml' \
-     --include='*.sh' --include='*.env' --include='.env.example' \
+# (lines that are only a comment, starting with #, are ignored)
+hits=$(grep -rniE --include='*.yml' --include='*.yaml' --include='*.conf' --include='*.toml' \
+     --include='*.sh' --include='*.env' --include='Caddyfile' \
      '(pass(word|wd)?|secret|token|api[_-]?key|private[_-]?key|credential|pwhash|hash)[A-Za-z0-9_]*["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[^[:space:]$"'"'"'{}]' \
-     "$APPS"; then
+     "$APPS" | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true)
+if [[ -n "$hits" ]]; then
+  echo "$hits"
   echo
   echo "!! Possible secrets above. Move them into that app's .env file and use \${NAME}"
   echo "!! in the compose file instead, then run collect.sh again. Do NOT commit yet."

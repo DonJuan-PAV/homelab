@@ -5,10 +5,13 @@ services:
     user: "${PUID:-1000}:${PGID:-1000}"
     ports:
       - "8096:8096"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     volumes:
       - ./jellyfin/config:/config
       - ./jellyfin/cache:/cache
-      - ${MEDIA_DIR:-./media}:/media
+      - ${MEDIA_DIR:-./media}:/media:ro
     restart: unless-stopped
     # Optional: faster video conversion with an Intel/AMD graphics chip.
     # Uncomment the 4 lines below if `ls /dev/dri` on the server shows renderD128.

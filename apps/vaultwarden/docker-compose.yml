@@ -1,0 +1,12 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    environment:
+      DOMAIN: "https://juanito.tail358c85.ts.net"     # set in step 4
+      SIGNUPS_ALLOWED: "false"         # turned off after you create your account
+    volumes:
+      - ./data:/data                  # your encrypted vault
+    ports:
+      - "127.0.0.1:8222:80"           # only reachable from the server itself (Tailscale adds HTTPS in front)

@@ -1,0 +1,9 @@
+services:
+  server-map:
+    image: nginx:alpine
+    container_name: server-map
+    restart: unless-stopped
+    ports:
+      - "8099:80"
+    volumes:
+      - ./output:/usr/share/nginx/html:ro
