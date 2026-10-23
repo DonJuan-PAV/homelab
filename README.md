@@ -6,7 +6,7 @@ Everything in `apps/` is the real configuration the server is running right now.
 
 ## Why I have this
 
-It started small, with a little YouTube-to-MP3 app. Then I wanted my own Spotify that I could stream from anywhere, so I set up Navidrome. Then I wanted my movies too, then a dashboard to see everything in one place, and it kept growing from there.
+It started small, with a little YouTube-to-MP3 app. Then I wanted an alternative to Spotify, which keeps raising its price while the app gets worse with every update, so I set up Navidrome to stream my own music from anywhere. Then I wanted my movies too, then a dashboard to see everything in one place, and it kept growing from there.
 
 It's also where I practice the things I don't get to do much at my day job in IT support: Linux, networking, security, backups, and fixing things I broke myself.
 
@@ -58,7 +58,6 @@ There's also a restore test script that actually restores files and checks them.
 
 ## Things that went wrong (so far)
 
-**The disk.** The server has a ~1 TB drive, but Ubuntu's installer had only given the system part of it and left the rest unused in LVM. Extending the volume got me to ~937 GB.
 
 **My own website didn't load at home.** flights.ricamivida.com worked from my phone on data but not from my Wi-Fi. My router can't loop traffic back to its own public IP, so now Pi-hole answers that domain with the server's local address for devices at home.
 
@@ -86,4 +85,3 @@ git push
 - Login protection for Jellyfin (next)
 - Make Navidrome public through Caddy, like Jellyfin
 - My own Android app that streams music from Navidrome (started)
-- Immich for photos, Home Assistant, maybe a game server
